@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Patient Search</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><header class="topbar"><div><div class="brand">Care<span>Point</span></div><small>Patient search</small></div><a class="navlink" href="/">← Dashboard</a></header>
+<main class="container"><section class="panel"><p class="eyebrow">SEARCH RESULTS</p><h1>Patients matching “{{ term }}”</h1>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Gender</th><th>Phone</th></tr></thead><tbody>
+{% for p in results %}<tr><td>{{ p.patient_id }}</td><td>{{ p.name }}</td><td>{{ p.age }}</td><td>{{ p.gender }}</td><td>{{ p.phone }}</td></tr>{% else %}<tr><td colspan="5" class="empty">No matching patients.</td></tr>{% endfor %}
+</tbody></table></div><a class="primary linkbutton" href="/">Back to dashboard</a></section></main></body></html>

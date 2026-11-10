@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CarePoint Clinic | Clinic Management</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div><div class="brand">Care<span>Point</span></div><small>Clinic Management</small></div>
+  <nav class="main-nav"><a class="navlink" href="#patients">Patients</a><a class="navlink" href="#appointments">Appointments</a><a class="navlink" href="#team">Our doctors</a><a class="navlink" href="#billing">Billing</a></nav>
+</header>
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}
+      <div class="alert {{ category }}">{{ message }}</div>
+    {% endfor %}{% endif %}
+  {% endwith %}
+  {% if db_error %}
+    <div class="alert error">Database connection error: {{ db_error }}<br>Check MySQL and the DB_CONFIG settings in app.py.</div>
+  {% endif %}
+
+  <section class="welcome">
+    <div><p class="eyebrow">CLINIC OVERVIEW</p><h1>Good day. Here's your clinic at a glance.</h1>
+    <p class="muted">A simple dashboard to manage patients, doctors, appointments and payments.</p></div>
+    <div class="date-pill">● System online</div>
+  </section>
+
+  <section class="stats">
+    <article class="stat"><span>Total patients</span><strong>{{ stats.get('patients', 0) }}</strong><small>Registered patients</small></article>
+    <article class="stat"><span>Doctors</span><strong>{{ stats.get('doctors', 0) }}</strong><small>Available doctors</small></article>
+    <article class="stat"><span>Appointments</span><strong>{{ stats.get('appointments', 0) }}</strong><small>All records</small></article>
+    <article class="stat"><span>Booked</span><strong>{{ stats.get('booked', 0) }}</strong><small>Awaiting consultation</small></article>
+  </section>
+
+  <section class="two-col" id="patients">
+    <article class="panel">
+      <div class="panel-head"><div><p class="eyebrow">PATIENT SERVICES</p><h2>Register a patient</h2></div><span class="symbol">＋</span></div>
+      <form action="/patient" method="POST" class="form-grid">
+        <label>Full name<input name="name" placeholder="Patient name" required></label>
+        <label>Age<input name="age" type="number" min="0" max="120" placeholder="Age" required></label>
+        <label>Gender<select name="gender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></label>
+        <label>Phone<input name="phone" placeholder="Phone number" required></label>
+        <button class="primary full" type="submit">Add patient</button>
+      </form>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head"><div><p class="eyebrow">SCHEDULING</p><h2>Book appointment</h2></div><span class="symbol">▦</span></div>
+      <form action="/appointment" method="POST" class="form-grid">
+        <label>Patient<select name="patient_id" required><option value="">Choose patient</option>{% for p in patients %}<option value="{{ p.patient_id }}">{{ p.name }} (#{{ p.patient_id }})</option>{% endfor %}</select></label>
+        <label>Doctor<select name="doctor_id" required><option value="">Choose doctor</option>{% for d in doctors %}<option value="{{ d.doctor_id }}">{{ d.name }} · {{ d.specialization }}</option>{% endfor %}</select></label>
+        <label>Date<input type="date" name="appointment_date" required></label>
+        <label>Time<input type="time" name="appointment_time" required></label>
+        <button class="primary full" type="submit">Book appointment</button>
+      </form>
+    </article>
+  </section>
+
+  <section class="panel" id="appointments">
+    <div class="panel-head"><div><p class="eyebrow">SCHEDULE & VISITS</p><h2>Appointments</h2></div>
+      <form action="/search" method="GET" class="search"><input name="q" placeholder="Search patient name / phone"><button class="secondary">Search</button></form>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Date & time</th><th>Status</th><th>Action</th></tr></thead><tbody>
+      {% for a in appointments %}<tr>
+        <td>#{{ a.appointment_id }}</td><td>{{ a.patient_name }}</td><td>{{ a.doctor_name }}<small>{{ a.specialization }}</small></td>
+        <td>{{ a.appointment_date }}<small>{{ a.appointment_time }}</small></td>
+        <td><span class="status {{ a.status|lower }}">{{ a.status }}</span></td>
+        <td>{% if a.status == 'Booked' %}
+          <form action="/complete-payment/{{ a.appointment_id }}" method="POST" class="inline"><input class="amount" name="amount" type="number" min="0" step="0.01" value="500" aria-label="Amount"><button class="tiny primary">Complete + Pay</button></form>
+          <form action="/cancel/{{ a.appointment_id }}" method="POST" class="inline"><button class="tiny danger">Cancel</button></form>
+        {% else %}—{% endif %}</td>
+      </tr>{% else %}<tr><td colspan="6" class="empty">No appointments yet. Add a patient and book an appointment.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  <section class="two-col">
+    <article class="panel" id="team">
+      <div class="panel-head"><div><p class="eyebrow">OUR TEAM</p><h2>Meet the doctors</h2></div></div>
+      {% for d in doctors %}<div class="person"><div class="avatar">{{ d.name[0] }}</div><div><b>{{ d.name }}</b><small>{{ d.specialization }}</small></div></div>{% else %}<p class="muted">Doctor information is currently unavailable.</p>{% endfor %}
+    </article>
+    <article class="panel" id="billing">
+      <div class="panel-head"><div><p class="eyebrow">PAYMENTS</p><h2>Recent payments</h2></div></div>
+      {% for p in payments %}<div class="payment-row"><div><b>{{ p.patient_name }}</b><small>Appointment #{{ p.appointment_id }} · {{ p.paid_on }}</small></div><strong>₹{{ "%.2f"|format(p.amount) }}</strong></div>{% else %}<p class="muted">No payments recorded yet.</p>{% endfor %}
+    </article>
+  </section>
+
+  <footer><strong>CarePoint Clinic</strong><span>Thoughtful care. Better health.</span><small>© 2026 CarePoint Clinic. All rights reserved.</small></footer>
+</main>
+</body>
+</html>
